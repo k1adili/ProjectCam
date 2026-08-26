@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ProjectCam</string>
+
+    <!-- Projects -->
+    <string name="projects_title">پروژه‌ها</string>
+    <string name="projects_empty_title">هنوز پروژه‌ای ثبت نشده</string>
+    <string name="projects_empty_subtitle">برای شروع مستندسازی، یک پروژه جدید بسازید</string>
+    <string name="new_project">پروژه جدید</string>
+    <string name="project_name_label">نام پروژه</string>
+    <string name="project_note_label">توضیحات (اختیاری)</string>
+    <string name="create">ایجاد</string>
+    <string name="cancel">انصراف</string>
+    <string name="save">ذخیره</string>
+    <string name="delete">حذف</string>
+    <string name="edit">ویرایش</string>
+    <string name="photo_count_format">%1$d عکس</string>
+
+    <!-- Project detail -->
+    <string name="project_detail_empty_title">هنوز عکسی ثبت نشده</string>
+    <string name="project_detail_empty_subtitle">با دکمه دوربین اولین عکس این پروژه را ثبت کنید</string>
+    <string name="select_all">انتخاب همه</string>
+    <string name="deselect_all">لغو انتخاب</string>
+    <string name="selected_count_format">%1$d مورد انتخاب شد</string>
+    <string name="export_kml">خروجی KML</string>
+    <string name="export_selected">عکس‌های انتخاب‌شده</string>
+    <string name="export_all">همه عکس‌های پروژه</string>
+    <string name="delete_selected">حذف موارد انتخاب‌شده</string>
+    <string name="delete_project_confirm_title">حذف پروژه</string>
+    <string name="delete_project_confirm_message">این پروژه و تمام عکس‌های آن برای همیشه حذف می‌شود. ادامه می‌دهید؟</string>
+    <string name="delete_photos_confirm_title">حذف عکس‌ها</string>
+    <string name="delete_photos_confirm_message">عکس‌های انتخاب‌شده برای همیشه حذف می‌شوند. ادامه می‌دهید؟</string>
+
+    <!-- Camera -->
+    <string name="camera_permission_needed">برای ثبت عکس، دسترسی به دوربین لازم است</string>
+    <string name="grant_permission">اجازه دسترسی</string>
+    <string name="location_acquiring">در حال دریافت موقعیت مکانی…</string>
+    <string name="location_acquired_format">دقت GPS: ± %1$s متر</string>
+    <string name="location_unavailable">موقعیت مکانی در دسترس نیست</string>
+    <string name="retry_location">تلاش دوباره برای GPS</string>
+    <string name="capture_photo">ثبت عکس</string>
+    <string name="saving_photo">در حال ذخیره…</string>
+
+    <!-- Photo viewer -->
+    <string name="photo_note_label">یادداشت</string>
+    <string name="photographer_label_format">عکاس: %1$s</string>
+    <string name="date_label_format">تاریخ: %1$s</string>
+    <string name="location_label_format">مختصات: %1$s</string>
+
+    <!-- Settings -->
+    <string name="settings_title">تنظیمات</string>
+    <string name="photographer_name_label">نام عکاس</string>
+    <string name="photographer_name_hint">این نام روی همه عکس‌های بعدی درج می‌شود</string>
+    <string name="backup_section_title">پشتیبان‌گیری</string>
+    <string name="export_backup">خروجی کامل (پشتیبان)</string>
+    <string name="export_backup_desc">تمام پروژه‌ها، عکس‌ها و اطلاعات آن‌ها در یک فایل زیپ ذخیره می‌شود</string>
+    <string name="import_backup">بازیابی از پشتیبان</string>
+    <string name="import_backup_desc">بازیابی از یک فایل پشتیبان قبلی (اطلاعات فعلی جایگزین می‌شود)</string>
+    <string name="import_backup_confirm_title">بازیابی پشتیبان</string>
+    <string name="import_backup_confirm_message">تمام پروژه‌ها و عکس‌های فعلی با محتوای فایل پشتیبان جایگزین می‌شود. این عملیات قابل بازگشت نیست. ادامه می‌دهید؟</string>
+    <string name="about_section_title">درباره</string>
+    <string name="about_developer_format">توسعه‌دهنده: %1$s</string>
+
+    <!-- Common -->
+    <string name="ok">تأیید</string>
+    <string name="error_generic">خطایی رخ داد. دوباره تلاش کنید.</string>
+    <string name="back">بازگشت</string>
+    <string name="add_project_cd">افزودن پروژه</string>
+    <string name="open_camera_cd">باز کردن دوربین</string>
+</resources>

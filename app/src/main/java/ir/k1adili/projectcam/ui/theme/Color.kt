@@ -1,0 +1,47 @@
+package ir.k1adili.projectcam.ui.theme
+
+import androidx.compose.ui.graphics.Color
+
+// Seed: safety/hi-vis orange - the color of hard hats, vests, and site markers.
+val SafetyOrange = Color(0xFFF2700C)
+val SafetyOrangeDark = Color(0xFFFF9142)
+
+val LightPrimary = Color(0xFFB84E00)
+val LightOnPrimary = Color(0xFFFFFFFF)
+val LightPrimaryContainer = Color(0xFFFFDBC7)
+val LightOnPrimaryContainer = Color(0xFF381000)
+val LightSecondary = Color(0xFF6F5B4E)
+val LightOnSecondary = Color(0xFFFFFFFF)
+val LightSecondaryContainer = Color(0xFFFCDDC6)
+val LightOnSecondaryContainer = Color(0xFF271907)
+val LightBackground = Color(0xFFFFFBFF)
+val LightOnBackground = Color(0xFF221A14)
+val LightSurface = Color(0xFFFFFBFF)
+val LightOnSurface = Color(0xFF221A14)
+val LightSurfaceVariant = Color(0xFFF3DFD3)
+val LightOnSurfaceVariant = Color(0xFF51443A)
+val LightOutline = Color(0xFF847469)
+val LightError = Color(0xFFBA1A1A)
+val LightOnError = Color(0xFFFFFFFF)
+
+val DarkPrimary = Color(0xFFFFB68C)
+val DarkOnPrimary = Color(0xFF5A2200)
+val DarkPrimaryContainer = Color(0xFF823400)
+val DarkOnPrimaryContainer = Color(0xFFFFDBC7)
+val DarkSecondary = Color(0xFFDDC2AB)
+val DarkOnSecondary = Color(0xFF3E2D1F)
+val DarkSecondaryContainer = Color(0xFF564334)
+val DarkOnSecondaryContainer = Color(0xFFFCDDC6)
+val DarkBackground = Color(0xFF181210)
+val DarkOnBackground = Color(0xFFEDE0D9)
+val DarkSurface = Color(0xFF181210)
+val DarkOnSurface = Color(0xFFEDE0D9)
+val DarkSurfaceVariant = Color(0xFF51443A)
+val DarkOnSurfaceVariant = Color(0xFFD6C3B5)
+val DarkOutline = Color(0xFF9E8D80)
+val DarkError = Color(0xFFFFB4AB)
+val DarkOnError = Color(0xFF690005)
+
+// High-signal accents used sparingly (selection states, GPS-accuracy badges)
+val AccentTeal = Color(0xFF1D7A73)
+val WarningAmber = Color(0xFFB8860B)
