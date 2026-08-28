@@ -253,7 +253,7 @@ fun ProjectDetailScreen(
     }
 }
 
-@OptIn(ExperimentalFoundationApiCompat::class)
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun PhotoThumbnail(
     file: File,
@@ -287,5 +287,3 @@ private fun PhotoThumbnail(
         }
     }
 }
-
-private typealias ExperimentalFoundationApiCompat = androidx.compose.foundation.ExperimentalFoundationApi
