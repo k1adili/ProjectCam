@@ -4,6 +4,11 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Only needed pre-API 29 to write into the public Pictures folder when saving a single
+         photo to the gallery; API 29+ uses MediaStore's scoped-storage APIs instead. -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
 
     <uses-feature
         android:name="android.hardware.camera"

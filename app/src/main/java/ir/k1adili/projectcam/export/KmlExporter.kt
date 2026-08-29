@@ -108,7 +108,7 @@ object KmlExporter {
             }
 
             sb.append("<Placemark>\n")
-            sb.append("<name>").append(xmlEscape("عکس ${index + 1}")).append("</name>\n")
+            sb.append("<name>").append(xmlEscape("${project.name} - عکس ${index + 1}")).append("</name>\n")
             sb.append("<description><![CDATA[").append(description).append("]]></description>\n")
             sb.append("<Point><coordinates>")
                 .append(photo.longitude).append(',').append(photo.latitude).append(",0")

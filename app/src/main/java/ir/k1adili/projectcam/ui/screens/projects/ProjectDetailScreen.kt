@@ -111,7 +111,7 @@ fun ProjectDetailScreen(
                 result.outputFile
             )
             val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "application/zip"
+                type = "application/vnd.google-earth.kmz"
                 putExtra(Intent.EXTRA_STREAM, uri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }

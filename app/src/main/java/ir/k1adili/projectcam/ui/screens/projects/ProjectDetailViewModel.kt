@@ -77,9 +77,13 @@ class ProjectDetailViewModel(
 
             val result = withContext(Dispatchers.IO) {
                 val safeName = currentProject.name.replace(Regex("[^A-Za-z0-9._\\-\\u0600-\\u06FF ]"), "_")
+                // .kmz (not .zip): Google Earth only treats this as a self-contained package with
+                // persistently-resolvable images when the extension identifies it as KMZ. Saved as
+                // .zip, Earth would show the photo balloon once from a temp extraction and then
+                // only show a bare pin on every subsequent open.
                 val outputFile = File(
                     PhotoFileUtils.exportsDir(context),
-                    "${safeName}_${System.currentTimeMillis()}.zip"
+                    "${safeName}_${System.currentTimeMillis()}.kmz"
                 )
                 KmlExporter.export(currentProject, targetPhotos, outputFile) { photo ->
                     photoRepository.absoluteFile(photo)

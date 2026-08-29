@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ir.k1adili.projectcam.data.SettingsRepository
+import ir.k1adili.projectcam.data.ThemeMode
 import ir.k1adili.projectcam.data.local.AppDatabase
 import ir.k1adili.projectcam.export.BackupManager
 import ir.k1adili.projectcam.util.PhotoFileUtils
@@ -32,6 +33,15 @@ class SettingsViewModel(
 
     val photographerName: StateFlow<String> = settingsRepository.photographerName
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
+    val themeMode: StateFlow<ThemeMode> = settingsRepository.themeMode
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ThemeMode.SYSTEM)
+
+    fun setThemeMode(mode: ThemeMode) {
+        viewModelScope.launch {
+            settingsRepository.setThemeMode(mode)
+        }
+    }
 
     private val _isBusy = MutableStateFlow(false)
     val isBusy: StateFlow<Boolean> = _isBusy.asStateFlow()

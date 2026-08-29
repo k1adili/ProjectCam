@@ -6,18 +6,18 @@
     android:viewportHeight="108">
     <!-- camera body -->
     <path
-        android:fillColor="#FFFFFF"
+        android:fillColor="#231C00"
         android:pathData="M32,42 L40,42 L44,34 L64,34 L68,42 L76,42 C79.31,42 82,44.69 82,48 L82,70 C82,73.31 79.31,76 76,76 L32,76 C28.69,76 26,73.31 26,70 L26,48 C26,44.69 28.69,42 32,42 Z" />
     <!-- lens outer -->
     <path
-        android:fillColor="#B84E00"
+        android:fillColor="#FFCD11"
         android:pathData="M54,48 m-14,0 a14,14 0 1,0 28,0 a14,14 0 1,0 -28,0" />
     <!-- lens inner -->
     <path
-        android:fillColor="#FFFFFF"
+        android:fillColor="#231C00"
         android:pathData="M54,48 m-8,0 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0" />
     <!-- shutter button -->
     <path
-        android:fillColor="#FFFFFF"
+        android:fillColor="#FFCD11"
         android:pathData="M68,38 h6 v4 h-6 z" />
 </vector>

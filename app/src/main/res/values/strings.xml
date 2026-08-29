@@ -60,6 +60,18 @@
     <string name="import_backup_confirm_message">تمام پروژه‌ها و عکس‌های فعلی با محتوای فایل پشتیبان جایگزین می‌شود. این عملیات قابل بازگشت نیست. ادامه می‌دهید؟</string>
     <string name="about_section_title">درباره</string>
     <string name="about_developer_format">توسعه‌دهنده: %1$s</string>
+    <string name="version_format">نسخه: %1$s</string>
+
+    <!-- Theme -->
+    <string name="theme_section_title">ظاهر برنامه</string>
+    <string name="theme_system">پیش‌فرض سیستم</string>
+    <string name="theme_light">روشن</string>
+    <string name="theme_dark">تیره</string>
+
+    <!-- Photo viewer full-screen -->
+    <string name="save_photo">ذخیره در گالری</string>
+    <string name="photo_saved_to_gallery">عکس در گالری ذخیره شد</string>
+    <string name="photo_save_failed">ذخیره عکس ناموفق بود</string>
 
     <!-- Common -->
     <string name="ok">تأیید</string>

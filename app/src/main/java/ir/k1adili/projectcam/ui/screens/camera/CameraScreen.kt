@@ -2,6 +2,7 @@ package ir.k1adili.projectcam.ui.screens.camera
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.view.OrientationEventListener
 import android.widget.Toast
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -167,6 +168,26 @@ private fun CameraContent(
 
     DisposableEffect(Unit) {
         onDispose { cameraExecutor.shutdown() }
+    }
+
+    // CameraX only reads the device rotation once, at use-case creation time. Without this,
+    // rotating the phone to landscape before shooting still saves the photo upright/portrait
+    // because ImageCapture never learns the rotation changed.
+    DisposableEffect(imageCapture) {
+        val orientationListener = object : OrientationEventListener(context) {
+            override fun onOrientationChanged(orientation: Int) {
+                if (orientation == ORIENTATION_UNKNOWN) return
+                val rotation = when (orientation) {
+                    in 45 until 135 -> android.view.Surface.ROTATION_270
+                    in 135 until 225 -> android.view.Surface.ROTATION_180
+                    in 225 until 315 -> android.view.Surface.ROTATION_90
+                    else -> android.view.Surface.ROTATION_0
+                }
+                imageCapture.targetRotation = rotation
+            }
+        }
+        orientationListener.enable()
+        onDispose { orientationListener.disable() }
     }
 
     LaunchedEffect(previewView) {

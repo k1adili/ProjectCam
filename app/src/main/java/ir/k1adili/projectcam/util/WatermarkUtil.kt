@@ -8,7 +8,7 @@ import android.graphics.RectF
 import android.graphics.Typeface
 import java.time.LocalDateTime
 import java.util.Locale
-import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 data class WatermarkInfo(
@@ -23,11 +23,16 @@ data class WatermarkInfo(
 object WatermarkUtil {
 
     /**
-     * Draws a semi-transparent bar across the bottom of [source] containing the project name,
-     * photographer, GPS coordinates (or "بدون موقعیت مکانی" if unavailable), and the Jalali
-     * date/time. Returns a NEW bitmap; [source] is not mutated (callers should recycle it
-     * themselves once no longer needed - not automatically recycled here since callers may
-     * still be showing a preview from it).
+     * Draws a small, semi-transparent info bar across the bottom of [source] containing the
+     * photographer name, GPS coordinates (or a "no location" note), and the Jalali date/time.
+     * The project name is intentionally NOT included here (it's already shown in-app; burning it
+     * into every photo was redundant and made the bar unnecessarily tall).
+     *
+     * Sizing is based on the SHORTER image dimension so the bar stays compact and proportionate
+     * on both portrait and landscape photos - basing it on the longer dimension made the bar
+     * enormous on landscape shots.
+     *
+     * Returns a NEW bitmap; [source] is not mutated.
      */
     fun applyWatermark(
         source: Bitmap,
@@ -39,22 +44,16 @@ object WatermarkUtil {
         val canvas = Canvas(result)
         val w = result.width
         val h = result.height
+        val shortSide = min(w, h)
 
-        val basePadding = w * 0.03f
-        val baseTextSize = max(w, h) * 0.026f
+        val basePadding = shortSide * 0.018f
+        val baseTextSize = shortSide * 0.017f
 
-        val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.WHITE
-            textSize = baseTextSize * 1.15f
-            typeface = titleTypeface ?: Typeface.DEFAULT_BOLD
-            setShadowLayer(4f, 1f, 1f, Color.argb(200, 0, 0, 0))
-            textAlign = Paint.Align.RIGHT
-        }
         val bodyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
             textSize = baseTextSize
             typeface = bodyTypeface ?: Typeface.DEFAULT
-            setShadowLayer(3f, 1f, 1f, Color.argb(200, 0, 0, 0))
+            setShadowLayer(2f, 1f, 1f, Color.argb(200, 0, 0, 0))
             textAlign = Paint.Align.RIGHT
         }
 
@@ -76,33 +75,26 @@ object WatermarkUtil {
         val dateLine = JalaliDateUtils.formatDateTimeNumeric(info.capturedAt)
         val photographerLine = "عکاس: ${info.photographerName.ifBlank { "-" }}"
 
-        val lines = listOf(info.projectName)
         val bodyLines = listOf(photographerLine, locationLine, dateLine)
 
-        val lineSpacing = baseTextSize * 0.45f
-        val titleHeight = titlePaint.fontSpacing
+        val lineSpacing = baseTextSize * 0.35f
         val bodyHeight = bodyPaint.fontSpacing
         val barHeight = basePadding * 2 +
-            titleHeight +
-            lineSpacing +
             bodyLines.size * bodyHeight +
-            (bodyLines.size - 1) * (lineSpacing * 0.5f)
+            (bodyLines.size - 1) * lineSpacing
 
         val barTop = h - barHeight
-        val barRect = RectF(0f, max(0f, barTop), w.toFloat(), h.toFloat())
+        val barRect = RectF(0f, kotlin.math.max(0f, barTop), w.toFloat(), h.toFloat())
         val barPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.argb(150, 0, 0, 0)
+            color = Color.argb(140, 0, 0, 0)
         }
         canvas.drawRect(barRect, barPaint)
 
-        var y = barRect.top + basePadding + titlePaint.textSize
-        canvas.drawText(lines[0], w - basePadding, y, titlePaint)
-
-        y += lineSpacing + bodyPaint.textSize
+        var y = barRect.top + basePadding + bodyPaint.textSize
         for ((index, line) in bodyLines.withIndex()) {
             canvas.drawText(line, w - basePadding, y, bodyPaint)
             if (index != bodyLines.lastIndex) {
-                y += bodyHeight + lineSpacing * 0.5f
+                y += bodyHeight + lineSpacing
             }
         }
 

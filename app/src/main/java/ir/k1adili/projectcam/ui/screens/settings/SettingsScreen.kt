@@ -21,6 +21,8 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -33,17 +35,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextAlign
+import ir.k1adili.projectcam.BuildConfig
 import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import ir.k1adili.projectcam.BuildConfig
 import ir.k1adili.projectcam.ProjectCamApp
 import ir.k1adili.projectcam.R
+import ir.k1adili.projectcam.data.ThemeMode
 import ir.k1adili.projectcam.ui.components.ConfirmDialog
 import ir.k1adili.projectcam.ui.theme.Spacing
 
@@ -59,11 +63,21 @@ fun SettingsScreen(onBack: () -> Unit) {
     )
 
     val photographerName by viewModel.photographerName.collectAsState()
+    val themeMode by viewModel.themeMode.collectAsState()
     val isBusy by viewModel.isBusy.collectAsState()
     val event by viewModel.events.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var nameField by rememberSaveable { mutableStateOf(photographerName) }
+    // Starts as null ("not loaded yet") rather than "" so we can tell the difference between
+    // "DataStore hasn't emitted the real value yet" and "the user actually cleared the field".
+    // Initializing eagerly from photographerName here would freeze the field at whatever value
+    // existed on the very first composition (usually the "" default, before DataStore loads),
+    // which is exactly why the saved name previously never showed up when reopening Settings.
+    var nameField by rememberSaveable { mutableStateOf<String?>(null) }
+    LaunchedEffect(photographerName) {
+        if (nameField == null) nameField = photographerName
+    }
+
     var showImportConfirm by remember { mutableStateOf(false) }
     var pendingImportUri by remember { mutableStateOf<android.net.Uri?>(null) }
 
@@ -75,9 +89,10 @@ fun SettingsScreen(onBack: () -> Unit) {
     }
 
     LaunchedEffect(nameField) {
-        if (nameField != photographerName) {
+        val current = nameField
+        if (current != null && current != photographerName) {
             kotlinx.coroutines.delay(500)
-            viewModel.setPhotographerName(nameField)
+            viewModel.setPhotographerName(current)
         }
     }
 
@@ -130,13 +145,36 @@ fun SettingsScreen(onBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(Spacing.lg)
         ) {
             OutlinedTextField(
-                value = nameField,
+                value = nameField.orEmpty(),
                 onValueChange = { nameField = it },
                 label = { Text(stringResource(R.string.photographer_name_label)) },
                 supportingText = { Text(stringResource(R.string.photographer_name_hint)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
+
+            Divider()
+
+            Text(stringResource(R.string.theme_section_title), style = MaterialTheme.typography.titleSmall)
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                val options = listOf(
+                    ThemeMode.SYSTEM to stringResource(R.string.theme_system),
+                    ThemeMode.LIGHT to stringResource(R.string.theme_light),
+                    ThemeMode.DARK to stringResource(R.string.theme_dark)
+                )
+                options.forEachIndexed { index, (mode, label) ->
+                    SegmentedButton(
+                        selected = themeMode == mode,
+                        onClick = { viewModel.setThemeMode(mode) },
+                        shape = androidx.compose.material3.SegmentedButtonDefaults.itemShape(
+                            index = index,
+                            count = options.size
+                        )
+                    ) {
+                        Text(label)
+                    }
+                }
+            }
 
             Divider()
 
@@ -161,12 +199,30 @@ fun SettingsScreen(onBack: () -> Unit) {
             }
 
             Divider()
-            Text(stringResource(R.string.about_section_title), style = MaterialTheme.typography.titleSmall)
-            Text(
-                stringResource(R.string.about_developer_format, "Keyvan Adili"),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(Spacing.xs)
+            ) {
+                Text(
+                    stringResource(R.string.about_section_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    stringResource(R.string.about_developer_format, "Keyvan Adili"),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    stringResource(R.string.version_format, BuildConfig.VERSION_NAME),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
     }
 
