@@ -120,7 +120,11 @@ fun CameraScreen(
     }
 
     LaunchedEffect(Unit) {
-        viewModel.refreshLocation(context)
+        viewModel.startObservingLocation(context)
+    }
+
+    DisposableEffect(Unit) {
+        onDispose { viewModel.stopObservingLocation() }
     }
 
     CameraContent(projectId = projectId, viewModel = viewModel, onBack = onBack, onPhotoSaved = onPhotoSaved)
@@ -232,7 +236,7 @@ private fun CameraContent(
 
             LocationBadge(
                 state = locationState,
-                onRetry = { viewModel.refreshLocation(context) }
+                onRetry = { viewModel.startObservingLocation(context) }
             )
         }
 

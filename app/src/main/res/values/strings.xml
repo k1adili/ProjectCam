@@ -64,7 +64,7 @@
 
     <!-- Theme -->
     <string name="theme_section_title">ظاهر برنامه</string>
-    <string name="theme_system">پیش‌فرض سیستم</string>
+    <string name="theme_system">سیستم</string>
     <string name="theme_light">روشن</string>
     <string name="theme_dark">تیره</string>
 

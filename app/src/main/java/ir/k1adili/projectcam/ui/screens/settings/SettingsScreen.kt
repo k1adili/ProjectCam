@@ -68,14 +68,15 @@ fun SettingsScreen(onBack: () -> Unit) {
     val event by viewModel.events.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Starts as null ("not loaded yet") rather than "" so we can tell the difference between
-    // "DataStore hasn't emitted the real value yet" and "the user actually cleared the field".
-    // Initializing eagerly from photographerName here would freeze the field at whatever value
-    // existed on the very first composition (usually the "" default, before DataStore loads),
-    // which is exactly why the saved name previously never showed up when reopening Settings.
+    // nameField stays null ("not loaded yet") until the first real (non-null) value streams in
+    // from photographerName, then tracks the user's edits. Because photographerName itself is
+    // now nullable, "loaded and genuinely empty" (photographerName == "") is distinguishable from
+    // "not loaded yet" (photographerName == null) - see SettingsViewModel for why that distinction
+    // is what actually fixes the field forgetting the saved name.
     var nameField by rememberSaveable { mutableStateOf<String?>(null) }
     LaunchedEffect(photographerName) {
-        if (nameField == null) nameField = photographerName
+        val loaded = photographerName
+        if (loaded != null && nameField == null) nameField = loaded
     }
 
     var showImportConfirm by remember { mutableStateOf(false) }
@@ -171,7 +172,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                             count = options.size
                         )
                     ) {
-                        Text(label)
+                        Text(label, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                     }
                 }
             }

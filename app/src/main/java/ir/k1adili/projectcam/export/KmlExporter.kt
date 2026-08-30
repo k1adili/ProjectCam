@@ -86,9 +86,11 @@ object KmlExporter {
         sb.append("<Document>\n")
         sb.append("<name>").append(xmlEscape(project.name)).append("</name>\n")
 
-        for ((index, photo) in photos.withIndex()) {
+        var placemarkNumber = 0
+        for (photo in photos) {
             if (photo.latitude == null || photo.longitude == null) continue
             val fileName = entryNameForPhotoId[photo.id] ?: continue
+            placemarkNumber++
 
             val capturedAt = LocalDateTime.ofInstant(
                 Instant.ofEpochMilli(photo.capturedAtEpochMillis),
@@ -108,7 +110,7 @@ object KmlExporter {
             }
 
             sb.append("<Placemark>\n")
-            sb.append("<name>").append(xmlEscape("${project.name} - عکس ${index + 1}")).append("</name>\n")
+            sb.append("<name>").append(xmlEscape("${project.name} - عکس $placemarkNumber")).append("</name>\n")
             sb.append("<description><![CDATA[").append(description).append("]]></description>\n")
             sb.append("<Point><coordinates>")
                 .append(photo.longitude).append(',').append(photo.latitude).append(",0")

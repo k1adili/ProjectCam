@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -31,8 +32,14 @@ class SettingsViewModel(
     private val database: AppDatabase
 ) : ViewModel() {
 
-    val photographerName: StateFlow<String> = settingsRepository.photographerName
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+    // Exposed as String? (not String) so the UI can tell "DataStore hasn't loaded yet" (null)
+    // apart from "loaded, and the saved name is genuinely empty" ("") - collapsing those two
+    // into the same "" value was the reason the saved photographer name never reappeared when
+    // reopening Settings (the UI's local edit field would latch onto the empty placeholder
+    // before the real persisted value had a chance to arrive, and then refuse to accept it).
+    val photographerName: StateFlow<String?> = settingsRepository.photographerName
+        .map<String, String?> { it }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val themeMode: StateFlow<ThemeMode> = settingsRepository.themeMode
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ThemeMode.SYSTEM)

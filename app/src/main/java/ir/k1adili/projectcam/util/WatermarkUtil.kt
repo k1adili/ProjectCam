@@ -8,6 +8,7 @@ import android.graphics.RectF
 import android.graphics.Typeface
 import java.time.LocalDateTime
 import java.util.Locale
+import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
@@ -23,14 +24,13 @@ data class WatermarkInfo(
 object WatermarkUtil {
 
     /**
-     * Draws a small, semi-transparent info bar across the bottom of [source] containing the
-     * photographer name, GPS coordinates (or a "no location" note), and the Jalali date/time.
-     * The project name is intentionally NOT included here (it's already shown in-app; burning it
-     * into every photo was redundant and made the bar unnecessarily tall).
+     * Draws a small, rounded, semi-transparent info chip near the bottom-right of [source]
+     * containing the project/album name, photographer, GPS coordinates (or a "no location" note),
+     * and the Jalali date/time.
      *
-     * Sizing is based on the SHORTER image dimension so the bar stays compact and proportionate
-     * on both portrait and landscape photos - basing it on the longer dimension made the bar
-     * enormous on landscape shots.
+     * The chip hugs its own text content (does not span the full photo width/height like a bar) so
+     * it covers as little of the photo as possible. Sizing is based on the SHORTER image dimension
+     * so it stays proportionate on both portrait and landscape photos.
      *
      * Returns a NEW bitmap; [source] is not mutated.
      */
@@ -46,55 +46,88 @@ object WatermarkUtil {
         val h = result.height
         val shortSide = min(w, h)
 
-        val basePadding = shortSide * 0.018f
+        val outerMargin = shortSide * 0.02f
+        val innerPadding = shortSide * 0.016f
         val baseTextSize = shortSide * 0.017f
+        val cornerRadius = shortSide * 0.02f
+        val maxChipWidth = w * 0.82f
 
+        val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            textSize = baseTextSize * 1.1f
+            typeface = titleTypeface ?: Typeface.DEFAULT_BOLD
+            setShadowLayer(2f, 1f, 1f, Color.argb(180, 0, 0, 0))
+            textAlign = Paint.Align.RIGHT
+        }
         val bodyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
             textSize = baseTextSize
             typeface = bodyTypeface ?: Typeface.DEFAULT
-            setShadowLayer(2f, 1f, 1f, Color.argb(200, 0, 0, 0))
+            setShadowLayer(2f, 1f, 1f, Color.argb(180, 0, 0, 0))
             textAlign = Paint.Align.RIGHT
         }
 
         val locationLine = if (info.latitude != null && info.longitude != null) {
-            val coords = String.format(
-                Locale.US,
-                "%.6f, %.6f",
-                info.latitude,
-                info.longitude
-            )
+            val coords = String.format(Locale.US, "%.6f, %.6f", info.latitude, info.longitude)
             val accuracy = info.accuracyMeters?.takeIf { !it.isNaN() }
                 ?.let { " (± ${it.roundToInt()} m)" }
                 .orEmpty()
             "GPS: $coords$accuracy"
         } else {
-            "بدون موقعیت مکانی (GPS در دسترس نبود)"
+            "بدون موقعیت مکانی"
         }
-
         val dateLine = JalaliDateUtils.formatDateTimeNumeric(info.capturedAt)
         val photographerLine = "عکاس: ${info.photographerName.ifBlank { "-" }}"
 
-        val bodyLines = listOf(photographerLine, locationLine, dateLine)
+        // (paint, line, isTitle) - shrink any single line that would blow out the chip width
+        // instead of letting it overflow the photo edge.
+        data class Line(val paint: Paint, val text: String)
 
-        val lineSpacing = baseTextSize * 0.35f
-        val bodyHeight = bodyPaint.fontSpacing
-        val barHeight = basePadding * 2 +
-            bodyLines.size * bodyHeight +
-            (bodyLines.size - 1) * lineSpacing
-
-        val barTop = h - barHeight
-        val barRect = RectF(0f, kotlin.math.max(0f, barTop), w.toFloat(), h.toFloat())
-        val barPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.argb(140, 0, 0, 0)
+        val rawLines = buildList {
+            if (info.projectName.isNotBlank()) add(Line(titlePaint, info.projectName))
+            add(Line(bodyPaint, photographerLine))
+            add(Line(bodyPaint, locationLine))
+            add(Line(bodyPaint, dateLine))
         }
-        canvas.drawRect(barRect, barPaint)
 
-        var y = barRect.top + basePadding + bodyPaint.textSize
-        for ((index, line) in bodyLines.withIndex()) {
-            canvas.drawText(line, w - basePadding, y, bodyPaint)
-            if (index != bodyLines.lastIndex) {
-                y += bodyHeight + lineSpacing
+        val maxTextWidth = maxChipWidth - innerPadding * 2
+        val lines = rawLines.map { line ->
+            val measured = line.paint.measureText(line.text)
+            if (measured > maxTextWidth && measured > 0f) {
+                val scaledPaint = Paint(line.paint).apply {
+                    textSize = line.paint.textSize * (maxTextWidth / measured)
+                }
+                Line(scaledPaint, line.text)
+            } else {
+                line
+            }
+        }
+
+        val lineSpacing = baseTextSize * 0.4f
+        val chipContentWidth = lines.maxOf { it.paint.measureText(it.text) }
+        val chipWidth = min(chipContentWidth + innerPadding * 2, maxChipWidth)
+        val chipHeight = innerPadding * 2 +
+            lines.sumOf { it.paint.fontSpacing.toDouble() }.toFloat() +
+            (lines.size - 1) * lineSpacing
+
+        val chipRight = w - outerMargin
+        val chipBottom = h - outerMargin
+        val chipRect = RectF(
+            max(0f, chipRight - chipWidth),
+            max(0f, chipBottom - chipHeight),
+            chipRight,
+            chipBottom
+        )
+        val chipPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.argb(150, 0, 0, 0)
+        }
+        canvas.drawRoundRect(chipRect, cornerRadius, cornerRadius, chipPaint)
+
+        var y = chipRect.top + innerPadding - lines.first().paint.fontMetrics.top
+        for ((index, line) in lines.withIndex()) {
+            canvas.drawText(line.text, chipRect.right - innerPadding, y, line.paint)
+            if (index != lines.lastIndex) {
+                y += line.paint.fontSpacing + lineSpacing
             }
         }
 

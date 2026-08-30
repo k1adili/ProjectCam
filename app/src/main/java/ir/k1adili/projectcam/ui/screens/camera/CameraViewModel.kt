@@ -9,14 +9,14 @@ import ir.k1adili.projectcam.data.repository.PhotoRepository
 import ir.k1adili.projectcam.data.repository.ProjectRepository
 import ir.k1adili.projectcam.util.CapturedLocation
 import ir.k1adili.projectcam.util.LocationHelper
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 sealed interface LocationUiState {
     data object Loading : LocationUiState
@@ -43,16 +43,37 @@ class CameraViewModel(
     private val _isSaving = MutableStateFlow(false)
     val isSaving: StateFlow<Boolean> = _isSaving.asStateFlow()
 
-    fun refreshLocation(context: Context) {
+    private var locationJob: Job? = null
+
+    /**
+     * Starts (or restarts, for the manual retry button) a CONTINUOUS location subscription that
+     * stays active for as long as the camera screen is open. This matters for multi-photo
+     * sessions: a single one-shot fetch made only when the screen first opens can still be
+     * "Loading" (or have failed) by the time the 2nd, 3rd... photo in the same session is taken,
+     * silently leaving those photos without GPS data. Continuously listening means every shot
+     * uses the freshest fix available, and a fix that arrives late still reaches later photos.
+     */
+    fun startObservingLocation(context: Context) {
+        locationJob?.cancel()
         _locationState.value = LocationUiState.Loading
-        viewModelScope.launch {
-            val location = withContext(Dispatchers.IO) { LocationHelper.getCurrentLocation(context) }
-            _locationState.value = if (location != null) {
-                LocationUiState.Available(location)
-            } else {
-                LocationUiState.Unavailable
+        locationJob = viewModelScope.launch {
+            launch {
+                // Only downgrade to "unavailable" if nothing has come in yet after a while;
+                // a fix that arrives afterwards will still flip this back to Available.
+                delay(12_000L)
+                if (_locationState.value is LocationUiState.Loading) {
+                    _locationState.value = LocationUiState.Unavailable
+                }
+            }
+            LocationHelper.observeLocationUpdates(context).collect { location ->
+                _locationState.value = LocationUiState.Available(location)
             }
         }
+    }
+
+    fun stopObservingLocation() {
+        locationJob?.cancel()
+        locationJob = null
     }
 
     fun savePhoto(
@@ -79,5 +100,10 @@ class CameraViewModel(
                 _isSaving.value = false
             }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        locationJob?.cancel()
     }
 }
