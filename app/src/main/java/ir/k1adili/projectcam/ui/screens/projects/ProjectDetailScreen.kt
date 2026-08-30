@@ -62,6 +62,7 @@ import ir.k1adili.projectcam.data.local.PhotoEntity
 import ir.k1adili.projectcam.ui.components.ConfirmDialog
 import ir.k1adili.projectcam.ui.components.EmptyState
 import ir.k1adili.projectcam.ui.theme.Spacing
+import ir.k1adili.projectcam.ui.theme.projectCamTopAppBarColors
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -154,12 +155,17 @@ fun ProjectDetailScreen(
                             Icon(Icons.Filled.IosShare, contentDescription = stringResource(R.string.export_kml))
                         }
                     }
-                }
+                },
+                colors = projectCamTopAppBarColors()
             )
         },
         floatingActionButton = {
             if (!selectionMode) {
-                FloatingActionButton(onClick = { onOpenCamera(projectId) }) {
+                FloatingActionButton(
+                    onClick = { onOpenCamera(projectId) },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ) {
                     Icon(Icons.Filled.PhotoCamera, contentDescription = stringResource(R.string.open_camera_cd))
                 }
             }

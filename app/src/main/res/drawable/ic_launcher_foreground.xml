@@ -4,20 +4,41 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- camera body -->
+    <!--
+        Bold, high-contrast black camera glyph on the yellow background (ic_launcher_background).
+        Content is kept within roughly x:20-88 / y:28-84, inside the ~66dp adaptive-icon safe
+        zone (center 21-87 of the 108dp canvas), so it isn't clipped by circular/squircle/rounded
+        -square launcher masks on different OEM skins. Simple, chunky shapes (thick body, one big
+        lens ring) so it still reads as "a camera" at the tiny sizes launcher icons are shown at.
+    -->
+
+    <!-- Small raised viewfinder bump on top of the camera body -->
     <path
         android:fillColor="#231C00"
-        android:pathData="M32,42 L40,42 L44,34 L64,34 L68,42 L76,42 C79.31,42 82,44.69 82,48 L82,70 C82,73.31 79.31,76 76,76 L32,76 C28.69,76 26,73.31 26,70 L26,48 C26,44.69 28.69,42 32,42 Z" />
-    <!-- lens outer -->
-    <path
-        android:fillColor="#FFCD11"
-        android:pathData="M54,48 m-14,0 a14,14 0 1,0 28,0 a14,14 0 1,0 -28,0" />
-    <!-- lens inner -->
+        android:pathData="M44,28 L64,28 L68,38 L40,38 Z" />
+
+    <!-- Camera body (rounded rect, x:20-88, y:38-84) -->
     <path
         android:fillColor="#231C00"
-        android:pathData="M54,48 m-8,0 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0" />
-    <!-- shutter button -->
+        android:pathData="M28,38 L80,38 C84.42,38 88,41.58 88,46 L88,76 C88,80.42 84.42,84 80,84 L28,84 C23.58,84 20,80.42 20,76 L20,46 C20,41.58 23.58,38 28,38 Z" />
+
+    <!-- Lens outer ring (cut back to the yellow background color) -->
     <path
         android:fillColor="#FFCD11"
-        android:pathData="M68,38 h6 v4 h-6 z" />
+        android:pathData="M54,63 m-16,0 a16,16 0 1,0 32,0 a16,16 0 1,0 -32,0" />
+
+    <!-- Lens glass (black) -->
+    <path
+        android:fillColor="#231C00"
+        android:pathData="M54,63 m-10,0 a10,10 0 1,0 20,0 a10,10 0 1,0 -20,0" />
+
+    <!-- Lens highlight, for a bit of dimensionality -->
+    <path
+        android:fillColor="#FFCD11"
+        android:pathData="M54,63 m-3.5,0 a3.5,3.5 0 1,0 7,0 a3.5,3.5 0 1,0 -7,0" />
+
+    <!-- Shutter button -->
+    <path
+        android:fillColor="#FFCD11"
+        android:pathData="M72,41 h8 v4 h-8 z" />
 </vector>

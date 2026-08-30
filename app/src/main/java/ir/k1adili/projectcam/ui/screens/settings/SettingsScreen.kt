@@ -4,6 +4,8 @@ import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -50,6 +52,7 @@ import ir.k1adili.projectcam.R
 import ir.k1adili.projectcam.data.ThemeMode
 import ir.k1adili.projectcam.ui.components.ConfirmDialog
 import ir.k1adili.projectcam.ui.theme.Spacing
+import ir.k1adili.projectcam.ui.theme.projectCamTopAppBarColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -133,7 +136,8 @@ fun SettingsScreen(onBack: () -> Unit) {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Filled.ArrowBackIosNew, contentDescription = stringResource(R.string.back))
                     }
-                }
+                },
+                colors = projectCamTopAppBarColors()
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -142,6 +146,7 @@ fun SettingsScreen(onBack: () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(padding)
+                .verticalScroll(rememberScrollState())
                 .padding(Spacing.lg),
             verticalArrangement = Arrangement.spacedBy(Spacing.lg)
         ) {

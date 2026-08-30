@@ -51,6 +51,7 @@ import ir.k1adili.projectcam.data.local.ProjectWithPhotoCount
 import ir.k1adili.projectcam.ui.components.ConfirmDialog
 import ir.k1adili.projectcam.ui.components.EmptyState
 import ir.k1adili.projectcam.ui.theme.Spacing
+import ir.k1adili.projectcam.ui.theme.projectCamTopAppBarColors
 import ir.k1adili.projectcam.util.JalaliDateUtils
 import java.time.Instant
 import java.time.ZoneId
@@ -90,14 +91,17 @@ fun ProjectListScreen(
                     IconButton(onClick = onOpenSettings) {
                         Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings_title))
                     }
-                }
+                },
+                colors = projectCamTopAppBarColors()
             )
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 text = { Text(stringResource(R.string.new_project)) },
                 icon = { Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add_project_cd)) },
-                onClick = { showCreateDialog = true }
+                onClick = { showCreateDialog = true },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
