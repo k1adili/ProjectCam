@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material3.Icon
@@ -58,7 +59,6 @@ import ir.k1adili.projectcam.ui.components.ConfirmDialog
 import ir.k1adili.projectcam.ui.theme.Spacing
 import ir.k1adili.projectcam.util.GallerySaver
 import ir.k1adili.projectcam.util.JalaliDateUtils
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
@@ -83,18 +83,28 @@ fun PhotoViewerScreen(
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var noteText by remember { mutableStateOf<String?>(null) }
     var showInfo by remember { mutableStateOf(true) }
+    var noteSaved by remember { mutableStateOf(true) }
 
     LaunchedEffect(photo?.id) {
         if (noteText == null) noteText = photo?.note.orEmpty()
     }
 
-    // Debounced note save.
-    LaunchedEffect(noteText) {
+    fun saveNoteNow() {
         val currentPhoto = photo
-        if (currentPhoto != null && noteText != null && noteText != currentPhoto.note) {
-            delay(600)
-            viewModel.updateNote(currentPhoto, noteText.orEmpty())
+        val text = noteText
+        if (currentPhoto != null && text != null && text != currentPhoto.note) {
+            viewModel.updateNote(currentPhoto, text)
+            noteSaved = true
         }
+    }
+
+    fun handleBack() {
+        saveNoteNow()
+        onBack()
+    }
+
+    androidx.activity.compose.BackHandler(enabled = true) {
+        handleBack()
     }
 
     val needsLegacyStoragePermission = Build.VERSION.SDK_INT < Build.VERSION_CODES.Q
@@ -154,7 +164,7 @@ fun PhotoViewerScreen(
             OverlayIconButton(
                 icon = Icons.Filled.ArrowBackIosNew,
                 contentDescription = stringResource(R.string.back),
-                onClick = onBack
+                onClick = { handleBack() }
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OverlayIconButton(
@@ -210,8 +220,26 @@ fun PhotoViewerScreen(
 
                 OutlinedTextField(
                     value = noteText.orEmpty(),
-                    onValueChange = { noteText = it },
+                    onValueChange = {
+                        noteText = it
+                        noteSaved = (it == currentPhoto.note)
+                    },
                     label = { Text(stringResource(R.string.photo_note_label)) },
+                    trailingIcon = {
+                        IconButton(
+                            onClick = {
+                                saveNoteNow()
+                                Toast.makeText(context, context.getString(R.string.note_saved), Toast.LENGTH_SHORT).show()
+                            },
+                            enabled = !noteSaved
+                        ) {
+                            Icon(
+                                Icons.Filled.Check,
+                                contentDescription = stringResource(R.string.save),
+                                tint = if (noteSaved) Color.White.copy(alpha = 0.4f) else MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    },
                     colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Color.White,
                         unfocusedTextColor = Color.White,

@@ -14,7 +14,8 @@ data class ProjectWithPhotoCount(
     val note: String,
     @ColumnInfo(name = "created_at_epoch_millis")
     val createdAtEpochMillis: Long,
-    val photoCount: Int
+    val photoCount: Int,
+    val latestPhotoFileName: String?
 )
 
 @Dao
@@ -26,7 +27,9 @@ interface ProjectDao {
     @Query(
         """
         SELECT p.id AS id, p.name AS name, p.note AS note, p.created_at_epoch_millis AS created_at_epoch_millis,
-               (SELECT COUNT(*) FROM photos ph WHERE ph.project_id = p.id) AS photoCount
+               (SELECT COUNT(*) FROM photos ph WHERE ph.project_id = p.id) AS photoCount,
+               (SELECT ph2.file_name FROM photos ph2 WHERE ph2.project_id = p.id
+                    ORDER BY ph2.captured_at_epoch_millis DESC LIMIT 1) AS latestPhotoFileName
         FROM projects p
         ORDER BY p.created_at_epoch_millis DESC
         """

@@ -15,6 +15,9 @@
     <string name="delete">حذف</string>
     <string name="edit">ویرایش</string>
     <string name="photo_count_format">%1$d عکس</string>
+    <string name="more_options">گزینه‌های بیشتر</string>
+    <string name="projects_summary_format">%1$d پروژه · %2$d عکس</string>
+    <string name="edit_project_title">ویرایش پروژه</string>
 
     <!-- Project detail -->
     <string name="project_detail_empty_title">هنوز عکسی ثبت نشده</string>
@@ -22,7 +25,7 @@
     <string name="select_all">انتخاب همه</string>
     <string name="deselect_all">لغو انتخاب</string>
     <string name="selected_count_format">%1$d مورد انتخاب شد</string>
-    <string name="export_kml">خروجی KML</string>
+    <string name="export_kml">خروجی KMZ</string>
     <string name="export_selected">عکس‌های انتخاب‌شده</string>
     <string name="export_all">همه عکس‌های پروژه</string>
     <string name="delete_selected">حذف موارد انتخاب‌شده</string>
@@ -43,6 +46,7 @@
 
     <!-- Photo viewer -->
     <string name="photo_note_label">یادداشت</string>
+    <string name="note_saved">یادداشت ذخیره شد</string>
     <string name="photographer_label_format">عکاس: %1$s</string>
     <string name="date_label_format">تاریخ: %1$s</string>
     <string name="location_label_format">مختصات: %1$s</string>

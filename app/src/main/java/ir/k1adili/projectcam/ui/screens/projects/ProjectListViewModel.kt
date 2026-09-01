@@ -31,6 +31,14 @@ class ProjectListViewModel(
         }
     }
 
+    fun renameProject(project: ProjectWithPhotoCount, newName: String, newNote: String) {
+        viewModelScope.launch {
+            val entity = projectRepository.getProject(project.id) ?: return@launch
+            runCatching { projectRepository.renameProject(entity, newName, newNote) }
+                .onFailure { _errorMessage.value = it.message }
+        }
+    }
+
     /** Deletes photo files first (cascade only removes DB rows, not files on disk), then the project. */
     fun deleteProject(projectId: Long) {
         viewModelScope.launch {
