@@ -60,6 +60,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import ir.k1adili.projectcam.ProjectCamApp
 import ir.k1adili.projectcam.R
+import ir.k1adili.projectcam.util.ExifWriter
 import ir.k1adili.projectcam.util.ImageUtils
 import ir.k1adili.projectcam.util.JalaliDateUtils.toPersianDigits
 import ir.k1adili.projectcam.util.PhotoFileUtils
@@ -121,10 +122,14 @@ fun CameraScreen(
 
     LaunchedEffect(Unit) {
         viewModel.startObservingLocation(context)
+        viewModel.startObservingHeading(context)
     }
 
     DisposableEffect(Unit) {
-        onDispose { viewModel.stopObservingLocation() }
+        onDispose {
+            viewModel.stopObservingLocation()
+            viewModel.stopObservingHeading()
+        }
     }
 
     CameraContent(projectId = projectId, viewModel = viewModel, onBack = onBack, onPhotoSaved = onPhotoSaved)
@@ -164,10 +169,25 @@ private fun CameraContent(
     val project by viewModel.project.collectAsState()
     val photographerName by viewModel.photographerName.collectAsState()
     val locationState by viewModel.locationState.collectAsState()
+    val headingDegrees by viewModel.headingDegrees.collectAsState()
     val isSaving by viewModel.isSaving.collectAsState()
 
     val previewView = remember { PreviewView(context) }
-    val imageCapture = remember { ImageCapture.Builder().setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY).build() }
+    val imageCapture = remember {
+        ImageCapture.Builder()
+            .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
+            // Without this, CameraX quietly picks a resolution well below the sensor's actual
+            // maximum (chosen for the use-case combination, not for output quality), which was
+            // why saved photos came out smaller/lower-res than the camera is actually capable of.
+            .setResolutionSelector(
+                androidx.camera.core.resolutionselector.ResolutionSelector.Builder()
+                    .setResolutionStrategy(
+                        androidx.camera.core.resolutionselector.ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY
+                    )
+                    .build()
+            )
+            .build()
+    }
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
 
     DisposableEffect(Unit) {
@@ -236,6 +256,7 @@ private fun CameraContent(
 
             LocationBadge(
                 state = locationState,
+                headingDegrees = headingDegrees,
                 onRetry = { viewModel.startObservingLocation(context) }
             )
         }
@@ -282,6 +303,7 @@ private fun CameraContent(
                                     try {
                                         val upright = ImageUtils.decodeUprightBitmap(tempFile)
                                         val loc = (locationState as? LocationUiState.Available)?.location
+                                        val capturedAt = LocalDateTime.now()
                                         val watermarked = WatermarkUtil.applyWatermark(
                                             source = upright,
                                             info = WatermarkInfo(
@@ -290,7 +312,8 @@ private fun CameraContent(
                                                 latitude = loc?.latitude,
                                                 longitude = loc?.longitude,
                                                 accuracyMeters = loc?.accuracyMeters,
-                                                capturedAt = LocalDateTime.now()
+                                                headingDegrees = headingDegrees,
+                                                capturedAt = capturedAt
                                             ),
                                             titleTypeface = ResourcesCompat.getFont(context, R.font.vazirmatn_semibold),
                                             bodyTypeface = ResourcesCompat.getFont(context, R.font.vazirmatn_regular)
@@ -298,6 +321,17 @@ private fun CameraContent(
                                         val finalFile = PhotoFileUtils.absoluteFile(context, fileName)
                                         ImageUtils.saveJpeg(watermarked, finalFile)
                                         tempFile.delete()
+
+                                        ExifWriter.write(
+                                            file = finalFile,
+                                            capturedAt = capturedAt,
+                                            latitude = loc?.latitude,
+                                            longitude = loc?.longitude,
+                                            accuracyMeters = loc?.accuracyMeters,
+                                            headingDegrees = headingDegrees,
+                                            photographerName = photographerName,
+                                            projectName = currentProject.name
+                                        )
 
                                         viewModel.savePhoto(
                                             fileName = fileName,
@@ -322,7 +356,7 @@ private fun CameraContent(
 }
 
 @Composable
-private fun LocationBadge(state: LocationUiState, onRetry: () -> Unit) {
+private fun LocationBadge(state: LocationUiState, headingDegrees: Float?, onRetry: () -> Unit) {
     Surface(
         color = Color.Black.copy(alpha = 0.45f),
         shape = MaterialTheme.shapes.extraLarge
@@ -355,6 +389,13 @@ private fun LocationBadge(state: LocationUiState, onRetry: () -> Unit) {
                         style = MaterialTheme.typography.labelMedium,
                         modifier = Modifier.padding(start = 8.dp)
                     )
+                    headingDegrees?.takeIf { !it.isNaN() }?.let { heading ->
+                        Text(
+                            text = " · ${ir.k1adili.projectcam.util.CompassHelper.directionLabel(heading)}",
+                            color = Color.White,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
                 }
                 is LocationUiState.Unavailable -> {
                     Icon(Icons.Filled.GpsOff, contentDescription = null, tint = Color(0xFFFF6B6B), modifier = Modifier.size(16.dp))

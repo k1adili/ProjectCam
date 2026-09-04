@@ -33,6 +33,7 @@ class PhotoRepository(
         latitude: Double?,
         longitude: Double?,
         accuracyMeters: Float?,
+        headingDegrees: Float?,
         photographerName: String,
         note: String = ""
     ): Long = photoDao.insert(
@@ -42,6 +43,7 @@ class PhotoRepository(
             latitude = latitude,
             longitude = longitude,
             accuracyMeters = accuracyMeters,
+            headingDegrees = headingDegrees,
             photographerName = photographerName,
             note = note,
             capturedAtEpochMillis = System.currentTimeMillis()

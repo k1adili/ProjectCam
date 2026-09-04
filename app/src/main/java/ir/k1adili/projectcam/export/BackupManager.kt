@@ -75,6 +75,7 @@ object BackupManager {
                     .put("latitude", ph.latitude ?: JSONObject.NULL)
                     .put("longitude", ph.longitude ?: JSONObject.NULL)
                     .put("accuracyMeters", if (ph.accuracyMeters != null && !ph.accuracyMeters.isNaN()) ph.accuracyMeters.toDouble() else JSONObject.NULL)
+                    .put("headingDegrees", if (ph.headingDegrees != null && !ph.headingDegrees.isNaN()) ph.headingDegrees.toDouble() else JSONObject.NULL)
                     .put("photographerName", ph.photographerName)
                     .put("note", ph.note)
                     .put("capturedAtEpochMillis", ph.capturedAtEpochMillis)
@@ -153,6 +154,7 @@ object BackupManager {
                     latitude = obj.optDoubleOrNull("latitude"),
                     longitude = obj.optDoubleOrNull("longitude"),
                     accuracyMeters = obj.optDoubleOrNull("accuracyMeters")?.toFloat(),
+                    headingDegrees = obj.optDoubleOrNull("headingDegrees")?.toFloat(),
                     photographerName = obj.optString("photographerName", ""),
                     note = obj.optString("note", ""),
                     capturedAtEpochMillis = obj.getLong("capturedAtEpochMillis")

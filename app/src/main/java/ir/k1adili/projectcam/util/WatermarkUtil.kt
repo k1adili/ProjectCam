@@ -18,6 +18,7 @@ data class WatermarkInfo(
     val latitude: Double?,
     val longitude: Double?,
     val accuracyMeters: Float?,
+    val headingDegrees: Float?,
     val capturedAt: LocalDateTime
 )
 
@@ -72,7 +73,10 @@ object WatermarkUtil {
             val accuracy = info.accuracyMeters?.takeIf { !it.isNaN() }
                 ?.let { " (± ${it.roundToInt()} m)" }
                 .orEmpty()
-            "GPS: $coords$accuracy"
+            val direction = info.headingDegrees?.takeIf { !it.isNaN() }
+                ?.let { " - ${CompassHelper.directionLabel(it)}" }
+                .orEmpty()
+            "GPS: $coords$accuracy$direction"
         } else {
             "بدون موقعیت مکانی"
         }

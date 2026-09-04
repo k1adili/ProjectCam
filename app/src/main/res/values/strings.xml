@@ -50,6 +50,7 @@
     <string name="photographer_label_format">عکاس: %1$s</string>
     <string name="date_label_format">تاریخ: %1$s</string>
     <string name="location_label_format">مختصات: %1$s</string>
+    <string name="direction_label_format">جهت: %1$s</string>
 
     <!-- Settings -->
     <string name="settings_title">تنظیمات</string>

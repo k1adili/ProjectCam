@@ -106,6 +106,9 @@ object KmlExporter {
                 photo.accuracyMeters?.takeIf { !it.isNaN() }?.let {
                     append("دقت GPS: ").append(xmlEscape("± ${it.toInt()} m")).append("<br/>")
                 }
+                photo.headingDegrees?.takeIf { !it.isNaN() }?.let {
+                    append("جهت: ").append(xmlEscape(ir.k1adili.projectcam.util.CompassHelper.directionLabel(it))).append("<br/>")
+                }
                 append("""<img src="files/$fileName" width="400"/>""")
             }
 

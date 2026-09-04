@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [ProjectEntity::class, PhotoEntity::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -27,7 +27,16 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     DB_NAME
-                ).build().also { instance = it }
+                )
+                    // No migration is written for the v1->v2 (added photos.heading_degrees)
+                    // schema change yet - this app is still in early active development, so
+                    // destructively recreating the DB on a schema bump is an acceptable
+                    // trade-off versus crashing on startup. Anyone updating should use
+                    // Settings -> "خروجی کامل (پشتیبان)" beforehand if they want to keep data;
+                    // it can be restored afterwards via "بازیابی از پشتیبان".
+                    .fallbackToDestructiveMigration()
+                    .build()
+                    .also { instance = it }
             }
     }
 }

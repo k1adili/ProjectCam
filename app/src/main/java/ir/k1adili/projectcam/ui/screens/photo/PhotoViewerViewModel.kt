@@ -20,10 +20,16 @@ class PhotoViewerViewModel(
 
     fun absoluteFile(photo: PhotoEntity): File = photoRepository.absoluteFile(photo)
 
-    fun updateNote(photo: PhotoEntity, note: String) {
-        viewModelScope.launch {
-            photoRepository.updateNote(photo, note)
-        }
+    /**
+     * Suspends until the write actually completes. IMPORTANT: callers that also navigate away
+     * right after saving must await this (e.g. via rememberCoroutineScope in the composable, NOT
+     * viewModelScope.launch fire-and-forget) before calling their back/navigate callback. Popping
+     * the back stack clears this ViewModel and cancels viewModelScope almost immediately, so a
+     * fire-and-forget viewModelScope.launch here could get cancelled mid-write - which was
+     * exactly why notes silently failed to save when the user tapped back right after typing.
+     */
+    suspend fun updateNote(photo: PhotoEntity, note: String) {
+        photoRepository.updateNote(photo, note)
     }
 
     fun delete(photo: PhotoEntity, onDeleted: () -> Unit) {

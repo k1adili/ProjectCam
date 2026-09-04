@@ -42,6 +42,10 @@ data class PhotoEntity(
     @ColumnInfo(name = "accuracy_meters")
     val accuracyMeters: Float?,
 
+    /** Compass heading in degrees (0=north, 90=east...) the device was facing at capture time, null if unavailable. */
+    @ColumnInfo(name = "heading_degrees", defaultValue = "NULL")
+    val headingDegrees: Float? = null,
+
     @ColumnInfo(name = "photographer_name")
     val photographerName: String,
 

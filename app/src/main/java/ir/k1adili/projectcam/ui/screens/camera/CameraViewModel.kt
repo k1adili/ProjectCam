@@ -8,6 +8,7 @@ import ir.k1adili.projectcam.data.local.ProjectEntity
 import ir.k1adili.projectcam.data.repository.PhotoRepository
 import ir.k1adili.projectcam.data.repository.ProjectRepository
 import ir.k1adili.projectcam.util.CapturedLocation
+import ir.k1adili.projectcam.util.CompassHelper
 import ir.k1adili.projectcam.util.LocationHelper
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -40,10 +41,15 @@ class CameraViewModel(
     private val _locationState = MutableStateFlow<LocationUiState>(LocationUiState.Loading)
     val locationState: StateFlow<LocationUiState> = _locationState.asStateFlow()
 
+    /** Latest compass heading in degrees (0=north...), null until the sensor has reported at least once. */
+    private val _headingDegrees = MutableStateFlow<Float?>(null)
+    val headingDegrees: StateFlow<Float?> = _headingDegrees.asStateFlow()
+
     private val _isSaving = MutableStateFlow(false)
     val isSaving: StateFlow<Boolean> = _isSaving.asStateFlow()
 
     private var locationJob: Job? = null
+    private var headingJob: Job? = null
 
     /**
      * Starts (or restarts, for the manual retry button) a CONTINUOUS location subscription that
@@ -76,6 +82,21 @@ class CameraViewModel(
         locationJob = null
     }
 
+    /** Same continuous-while-open reasoning as location: the compass heading at the exact moment of each shot. */
+    fun startObservingHeading(context: Context) {
+        headingJob?.cancel()
+        headingJob = viewModelScope.launch {
+            CompassHelper.observeHeadingDegrees(context).collect { heading ->
+                _headingDegrees.value = heading
+            }
+        }
+    }
+
+    fun stopObservingHeading() {
+        headingJob?.cancel()
+        headingJob = null
+    }
+
     fun savePhoto(
         fileName: String,
         photographerName: String,
@@ -92,6 +113,7 @@ class CameraViewModel(
                     latitude = loc?.latitude,
                     longitude = loc?.longitude,
                     accuracyMeters = loc?.accuracyMeters,
+                    headingDegrees = headingDegrees.value,
                     photographerName = photographerName,
                     note = note
                 )
@@ -105,5 +127,6 @@ class CameraViewModel(
     override fun onCleared() {
         super.onCleared()
         locationJob?.cancel()
+        headingJob?.cancel()
     }
 }

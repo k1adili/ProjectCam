@@ -89,18 +89,25 @@ fun PhotoViewerScreen(
         if (noteText == null) noteText = photo?.note.orEmpty()
     }
 
-    fun saveNoteNow() {
+    fun saveNoteNow(onComplete: (() -> Unit)? = null) {
         val currentPhoto = photo
         val text = noteText
         if (currentPhoto != null && text != null && text != currentPhoto.note) {
-            viewModel.updateNote(currentPhoto, text)
-            noteSaved = true
+            // Awaited via rememberCoroutineScope (NOT viewModelScope): if this is part of a
+            // back/navigate flow, we need the write to actually finish before we pop the back
+            // stack and tear down the ViewModel - see PhotoViewerViewModel.updateNote for why.
+            coroutineScope.launch {
+                viewModel.updateNote(currentPhoto, text)
+                noteSaved = true
+                onComplete?.invoke()
+            }
+        } else {
+            onComplete?.invoke()
         }
     }
 
     fun handleBack() {
-        saveNoteNow()
-        onBack()
+        saveNoteNow(onComplete = onBack)
     }
 
     androidx.activity.compose.BackHandler(enabled = true) {
@@ -218,6 +225,17 @@ fun PhotoViewerScreen(
                     color = Color.White
                 )
 
+                currentPhoto.headingDegrees?.takeIf { !it.isNaN() }?.let { heading ->
+                    Text(
+                        text = stringResource(
+                            R.string.direction_label_format,
+                            ir.k1adili.projectcam.util.CompassHelper.directionLabel(heading)
+                        ),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.White
+                    )
+                }
+
                 OutlinedTextField(
                     value = noteText.orEmpty(),
                     onValueChange = {
@@ -228,8 +246,9 @@ fun PhotoViewerScreen(
                     trailingIcon = {
                         IconButton(
                             onClick = {
-                                saveNoteNow()
-                                Toast.makeText(context, context.getString(R.string.note_saved), Toast.LENGTH_SHORT).show()
+                                saveNoteNow {
+                                    Toast.makeText(context, context.getString(R.string.note_saved), Toast.LENGTH_SHORT).show()
+                                }
                             },
                             enabled = !noteSaved
                         ) {
