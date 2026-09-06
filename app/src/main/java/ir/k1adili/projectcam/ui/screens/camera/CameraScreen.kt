@@ -172,7 +172,28 @@ private fun CameraContent(
     val headingDegrees by viewModel.headingDegrees.collectAsState()
     val isSaving by viewModel.isSaving.collectAsState()
 
-    val previewView = remember { PreviewView(context) }
+    val previewView = remember {
+        PreviewView(context).apply {
+            // FILL_CENTER (the default) crops the live preview to fill the screen, so what you
+            // frame on screen is NOT what ends up in the saved file once Preview and ImageCapture
+            // share the same aspect ratio below - FIT_CENTER shows the whole frame (letterboxed)
+            // so the viewfinder honestly matches the full photo you're about to get.
+            scaleType = PreviewView.ScaleType.FIT_CENTER
+        }
+    }
+
+    // Preview and ImageCapture are independent use cases and, left to their own defaults, can
+    // each resolve to a DIFFERENT aspect ratio (Preview tends toward a wide/screen-filling ratio,
+    // while ImageCapture's highest-resolution mode is very often only available at 4:3 on most
+    // sensors). That mismatch is why the saved photo didn't match what was framed live - forcing
+    // both to the same 4:3 aspect ratio makes the live preview and the saved file agree, and 4:3
+    // is also where most sensors expose their true maximum resolution.
+    val aspectRatioStrategy = remember {
+        androidx.camera.core.resolutionselector.AspectRatioStrategy(
+            androidx.camera.core.AspectRatio.RATIO_4_3,
+            androidx.camera.core.resolutionselector.AspectRatioStrategy.FALLBACK_RULE_AUTO
+        )
+    }
     val imageCapture = remember {
         ImageCapture.Builder()
             .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
@@ -181,6 +202,7 @@ private fun CameraContent(
             // why saved photos came out smaller/lower-res than the camera is actually capable of.
             .setResolutionSelector(
                 androidx.camera.core.resolutionselector.ResolutionSelector.Builder()
+                    .setAspectRatioStrategy(aspectRatioStrategy)
                     .setResolutionStrategy(
                         androidx.camera.core.resolutionselector.ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY
                     )
@@ -216,9 +238,14 @@ private fun CameraContent(
 
     LaunchedEffect(previewView) {
         val cameraProvider = getCameraProvider(context)
-        val preview = Preview.Builder().build().also {
-            it.setSurfaceProvider(previewView.surfaceProvider)
-        }
+        val preview = Preview.Builder()
+            .setResolutionSelector(
+                androidx.camera.core.resolutionselector.ResolutionSelector.Builder()
+                    .setAspectRatioStrategy(aspectRatioStrategy)
+                    .build()
+            )
+            .build()
+            .also { it.setSurfaceProvider(previewView.surfaceProvider) }
         runCatching {
             cameraProvider.unbindAll()
             cameraProvider.bindToLifecycle(

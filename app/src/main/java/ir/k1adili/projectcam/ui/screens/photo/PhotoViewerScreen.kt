@@ -86,7 +86,19 @@ fun PhotoViewerScreen(
     var noteSaved by remember { mutableStateOf(true) }
 
     LaunchedEffect(photo?.id) {
-        if (noteText == null) noteText = photo?.note.orEmpty()
+        // Guard on the LOADED photo being non-null, not just on noteText being null. The first
+        // time this runs, `photo` is still null (the DB query hasn't returned yet) and `photo?.id`
+        // is null - if we set noteText from that (via the old `photo?.note.orEmpty()` pattern) we
+        // latch it to "" permanently, because by the time the REAL photo arrives moments later
+        // (photo?.id changing from null to the actual id, re-triggering this effect), noteText is
+        // no longer null so the guard blocks the real value from ever loading. This is why a note
+        // you'd already saved never showed up again when reopening the photo - the save was fine,
+        // the *display* never picked it up. (Same root pattern as the photographer-name bug fixed
+        // earlier in Settings - the first, premature value silently wins the "already loaded" race.)
+        val loadedPhoto = photo
+        if (loadedPhoto != null && noteText == null) {
+            noteText = loadedPhoto.note
+        }
     }
 
     fun saveNoteNow(onComplete: (() -> Unit)? = null) {
