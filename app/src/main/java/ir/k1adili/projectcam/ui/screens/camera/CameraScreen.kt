@@ -2,15 +2,23 @@ package ir.k1adili.projectcam.ui.screens.camera
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.view.MotionEvent
 import android.view.OrientationEventListener
+import android.view.ScaleGestureDetector
 import android.widget.Toast
+import androidx.camera.core.AspectRatio
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
+import androidx.camera.core.resolutionselector.AspectRatioStrategy
+import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,6 +52,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,6 +78,7 @@ import ir.k1adili.projectcam.util.WatermarkUtil
 import kotlinx.coroutines.launch
 import java.io.File
 import java.time.LocalDateTime
+import java.util.Locale
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import kotlin.math.roundToInt
@@ -174,38 +184,30 @@ private fun CameraContent(
 
     val previewView = remember {
         PreviewView(context).apply {
-            // FILL_CENTER (the default) crops the live preview to fill the screen, so what you
-            // frame on screen is NOT what ends up in the saved file once Preview and ImageCapture
-            // share the same aspect ratio below - FIT_CENTER shows the whole frame (letterboxed)
-            // so the viewfinder honestly matches the full photo you're about to get.
+            // FIT_CENTER shows the whole frame (letterboxed) so the viewfinder honestly matches
+            // the full photo that gets saved - FILL_CENTER would crop it on screen.
             scaleType = PreviewView.ScaleType.FIT_CENTER
         }
     }
 
-    // Preview and ImageCapture are independent use cases and, left to their own defaults, can
-    // each resolve to a DIFFERENT aspect ratio (Preview tends toward a wide/screen-filling ratio,
-    // while ImageCapture's highest-resolution mode is very often only available at 4:3 on most
-    // sensors). That mismatch is why the saved photo didn't match what was framed live - forcing
-    // both to the same 4:3 aspect ratio makes the live preview and the saved file agree, and 4:3
-    // is also where most sensors expose their true maximum resolution.
-    val aspectRatioStrategy = remember {
-        androidx.camera.core.resolutionselector.AspectRatioStrategy(
-            androidx.camera.core.AspectRatio.RATIO_4_3,
-            androidx.camera.core.resolutionselector.AspectRatioStrategy.FALLBACK_RULE_AUTO
-        )
+    // RATIO_16_9 is what CameraX calls the tall 9:16 portrait frame (RATIO_4_3 -> 3:4, i.e. the
+    // 3000x4000 photos). Default is 9:16; the chips above the shutter button switch between them.
+    // Preview and ImageCapture MUST share the same ratio or the live view won't match the file.
+    var aspectRatio by rememberSaveable { mutableStateOf(AspectRatio.RATIO_16_9) }
+
+    var camera by remember { mutableStateOf<Camera?>(null) }
+    var zoomRatio by remember { mutableStateOf(1f) }
+
+    val aspectRatioStrategy = remember(aspectRatio) {
+        AspectRatioStrategy(aspectRatio, AspectRatioStrategy.FALLBACK_RULE_AUTO)
     }
-    val imageCapture = remember {
+    val imageCapture = remember(aspectRatio) {
         ImageCapture.Builder()
             .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
-            // Without this, CameraX quietly picks a resolution well below the sensor's actual
-            // maximum (chosen for the use-case combination, not for output quality), which was
-            // why saved photos came out smaller/lower-res than the camera is actually capable of.
             .setResolutionSelector(
-                androidx.camera.core.resolutionselector.ResolutionSelector.Builder()
+                ResolutionSelector.Builder()
                     .setAspectRatioStrategy(aspectRatioStrategy)
-                    .setResolutionStrategy(
-                        androidx.camera.core.resolutionselector.ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY
-                    )
+                    .setResolutionStrategy(ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY)
                     .build()
             )
             .build()
@@ -236,17 +238,18 @@ private fun CameraContent(
         onDispose { orientationListener.disable() }
     }
 
-    LaunchedEffect(previewView) {
+    // (Re)binds the camera whenever the aspect ratio changes (new use cases are built for it).
+    LaunchedEffect(previewView, aspectRatio) {
         val cameraProvider = getCameraProvider(context)
         val preview = Preview.Builder()
             .setResolutionSelector(
-                androidx.camera.core.resolutionselector.ResolutionSelector.Builder()
+                ResolutionSelector.Builder()
                     .setAspectRatioStrategy(aspectRatioStrategy)
                     .build()
             )
             .build()
             .also { it.setSurfaceProvider(previewView.surfaceProvider) }
-        runCatching {
+        val bound = runCatching {
             cameraProvider.unbindAll()
             cameraProvider.bindToLifecycle(
                 lifecycleOwner,
@@ -254,7 +257,43 @@ private fun CameraContent(
                 preview,
                 imageCapture
             )
+        }.getOrNull()
+        camera = bound
+        zoomRatio = bound?.cameraInfo?.zoomState?.value?.zoomRatio ?: 1f
+    }
+
+    fun applyZoom(target: Float) {
+        val cam = camera ?: return
+        val state = cam.cameraInfo.zoomState.value ?: return
+        val clamped = target.coerceIn(state.minZoomRatio, state.maxZoomRatio)
+        cam.cameraControl.setZoomRatio(clamped)
+        zoomRatio = clamped
+    }
+
+    // Pinch-to-zoom on the viewfinder.
+    DisposableEffect(previewView, camera) {
+        val cam = camera
+        if (cam != null) {
+            val detector = ScaleGestureDetector(
+                context,
+                object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+                    override fun onScale(detector: ScaleGestureDetector): Boolean {
+                        val state = cam.cameraInfo.zoomState.value ?: return true
+                        val target = (zoomRatio * detector.scaleFactor)
+                            .coerceIn(state.minZoomRatio, state.maxZoomRatio)
+                        cam.cameraControl.setZoomRatio(target)
+                        zoomRatio = target
+                        return true
+                    }
+                }
+            )
+            previewView.setOnTouchListener { view, event ->
+                detector.onTouchEvent(event)
+                if (event.actionMasked == MotionEvent.ACTION_UP) view.performClick()
+                true
+            }
         }
+        onDispose { previewView.setOnTouchListener(null) }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -297,6 +336,27 @@ private fun CameraContent(
                 .padding(bottom = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                ControlChip(label = "9:16", selected = aspectRatio == AspectRatio.RATIO_16_9) {
+                    aspectRatio = AspectRatio.RATIO_16_9
+                }
+                ControlChip(label = "3:4", selected = aspectRatio == AspectRatio.RATIO_4_3) {
+                    aspectRatio = AspectRatio.RATIO_4_3
+                }
+                androidx.compose.foundation.layout.Spacer(modifier = Modifier.padding(horizontal = 4.dp))
+                ControlChip(label = "1×", selected = kotlin.math.abs(zoomRatio - 1f) < 0.05f) { applyZoom(1f) }
+                ControlChip(label = "2×", selected = kotlin.math.abs(zoomRatio - 2f) < 0.05f) { applyZoom(2f) }
+                Text(
+                    text = toPersianDigits(String.format(Locale.US, "%.1f", zoomRatio)) + "×",
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
+            androidx.compose.foundation.layout.Spacer(modifier = Modifier.padding(top = 12.dp))
+
             project?.let {
                 Surface(
                     color = Color.Black.copy(alpha = 0.45f),
@@ -478,3 +538,21 @@ private suspend fun getCameraProvider(context: android.content.Context): Process
             ContextCompat.getMainExecutor(context)
         )
     }
+
+@Composable
+private fun ControlChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(if (selected) MaterialTheme.colorScheme.primary else Color.Black.copy(alpha = 0.45f))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = label,
+            color = if (selected) MaterialTheme.colorScheme.onPrimary else Color.White,
+            style = MaterialTheme.typography.labelLarge
+        )
+    }
+}
